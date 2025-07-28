@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Shamir's Secret Sharing Explorer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" xintegrity="sha384-n8MVd4RsNIU0KOVEMeaMurDcGPPc9Bis+khOkedNYSYSogVdMusioMTDEorobI9G" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" xintegrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" xintegrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDF8F0;
+            color: #4A4A4A;
+        }
+        .katex { font-size: 1.1em !important; }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .tooltip {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .has-tooltip:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-7xl">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-[#E57373] mb-2">Shamir's Secret Sharing</h1>
+            <h2 class="text-xl md:text-2xl font-light text-gray-600">An Interactive Explorer for Fault-Tolerant Secret Recovery</h2>
+            <p class="max-w-3xl mx-auto mt-4 text-gray-700">
+                This application demonstrates how a secret can be split into multiple parts ("shares"). Even if some shares are lost or corrupted, the original secret can be recovered once a minimum number of correct shares are brought together. Explore the concept below and run the simulation to see it in action.
+            </p>
+        </header>
+
+        <main>
+            <section id="concept" class="mb-16 p-8 bg-white/50 rounded-2xl shadow-lg border border-gray-200">
+                <h3 class="text-2xl font-bold text-center mb-8 text-[#4DB6AC]">The Core Concept: Splitting the Secret</h3>
+                <div class="flex flex-col md:flex-row items-center justify-around space-y-8 md:space-y-0 md:space-x-8">
+                    <div class="relative has-tooltip text-center">
+                        <div class="w-24 h-24 bg-[#E57373] rounded-full flex items-center justify-center text-white text-4xl shadow-md">
+                            <span>🔑</span>
+                        </div>
+                        <p class="mt-2 font-semibold">The Secret</p>
+                        <div class="tooltip absolute bottom-full mb-2 w-48 bg-gray-800 text-white text-xs rounded py-1 px-2 text-center">The critical data we need to protect.</div>
+                    </div>
+
+                    <div class="text-5xl text-gray-400 font-thin hidden md:block">→</div>
+                    <div class="text-5xl text-gray-400 font-thin md:hidden">↓</div>
+
+                    <div class="relative has-tooltip text-center">
+                        <div class="w-24 h-24 bg-[#4DB6AC] rounded-lg flex items-center justify-center text-white text-4xl shadow-md">
+                           <span>ƒ(x)</span>
+                        </div>
+                        <p class="mt-2 font-semibold">Polynomial Encoding</p>
+                        <div class="tooltip absolute bottom-full mb-2 w-48 bg-gray-800 text-white text-xs rounded py-1 px-2 text-center">The secret becomes the constant term of a random polynomial.</div>
+                    </div>
+                    
+                    <div class="text-5xl text-gray-400 font-thin hidden md:block">→</div>
+                     <div class="text-5xl text-gray-400 font-thin md:hidden">↓</div>
+
+                    <div class="flex space-x-4">
+                        <div class="relative has-tooltip text-center">
+                            <div class="w-16 h-16 bg-gray-200 rounded-md flex items-center justify-center text-2xl shadow-sm">📄</div>
+                            <p class="mt-2 text-sm">Share 1</p>
+                            <div class="tooltip absolute bottom-full mb-2 w-48 bg-gray-800 text-white text-xs rounded py-1 px-2 text-center">A point on the polynomial. Individually, it reveals nothing.</div>
+                        </div>
+                        <div class="relative has-tooltip text-center">
+                           <div class="w-16 h-16 bg-gray-200 rounded-md flex items-center justify-center text-2xl shadow-sm">📄</div>
+                           <p class="mt-2 text-sm">Share 2</p>
+                        </div>
+                        <div class="relative has-tooltip text-center">
+                           <div class="w-16 h-16 bg-gray-200 rounded-md flex items-center justify-center text-2xl shadow-sm">📄</div>
+                           <p class="mt-2 text-sm">...</p>
+                        </div>
+                         <div class="relative has-tooltip text-center">
+                           <div class="w-16 h-16 bg-gray-200 rounded-md flex items-center justify-center text-2xl shadow-sm">📄</div>
+                           <p class="mt-2 text-sm">Share n</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="simulation" class="p-8 bg-white rounded-2xl shadow-xl border border-gray-200">
+                <h3 class="text-2xl font-bold text-center mb-2 text-[#4DB6AC]">Algorithm Explorer</h3>
+                <p class="text-center text-gray-600 mb-8">Select a test case and run the simulation to see how the secret is recovered.</p>
+
+                <div class="flex flex-col md:flex-row items-center justify-center gap-4 mb-8">
+                    <div class="w-full md:w-auto">
+                        <label for="testCaseSelector" class="block text-sm font-medium text-gray-700 mb-1">Select Test Case:</label>
+                        <select id="testCaseSelector" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#4DB6AC] focus:border-[#4DB6AC]">
+                            <option value="1" selected>Test Case 1 (n=4, k=3)</option>
+                            <option value="2">Test Case 2 (n=10, k=7)</option>
+                        </select>
+                    </div>
+                    <button id="runButton" class="w-full md:w-auto mt-2 md:mt-6 bg-[#E57373] text-white font-bold py-3 px-8 rounded-lg shadow-md hover:bg-red-500 transition-colors duration-300">
+                        Run Simulation
+                    </button>
+                </div>
+
+                <div id="simulation-area" class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div id="input-shares-section" class="bg-gray-50 p-6 rounded-lg">
+                        <h4 class="font-bold text-lg mb-4">Input Shares</h4>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left text-gray-500">
+                                <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3">Share ID (x)</th>
+                                        <th scope="col" class="px-6 py-3">Base</th>
+                                        <th scope="col" class="px-6 py-3">Encoded Value (y)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sharesTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="process-section" class="bg-gray-50 p-6 rounded-lg">
+                        <h4 class="font-bold text-lg mb-4">Reconstruction Process</h4>
+                        <div id="process-output" class="h-48 overflow-y-auto bg-gray-900 text-white font-mono text-xs p-4 rounded-md">
+                            <p>Waiting to start simulation...</p>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5 mt-4">
+                            <div id="progressBar" class="bg-[#4DB6AC] h-2.5 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <p id="progressText" class="text-center text-sm mt-2 text-gray-600">Progress: 0%</p>
+                    </div>
+                </div>
+
+                <div id="results-section" class="mt-12 hidden">
+                    <h3 class="text-2xl font-bold text-center mb-8 text-[#4DB6AC]">Simulation Results</h3>
+                    <div class="bg-white p-6 rounded-lg shadow-inner border border-gray-100">
+                        <div class="chart-container">
+                            <canvas id="resultsChart"></canvas>
+                        </div>
+                        <div class="text-center mt-8 p-6 bg-[#E57373]/10 rounded-lg">
+                            <p class="text-lg text-gray-700">The most common value calculated was:</p>
+                            <p id="finalSecret" class="text-3xl font-bold text-[#E57373] my-2 break-all"></p>
+                            <p class="font-bold text-lg text-gray-800">This is the true secret!</p>
+                            <p id="faultyShareInfo" class="mt-4 text-sm text-gray-600"></p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="math-corner" class="my-16">
+                <div class="text-center">
+                    <button id="toggleMathButton" class="bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition">
+                        Show the Math Behind It
+                    </button>
+                </div>
+                <div id="math-details" class="hidden mt-8 p-8 bg-white/60 rounded-2xl shadow-lg border border-gray-200">
+                    <h3 class="text-2xl font-bold text-center mb-4 text-[#4DB6AC]">Reconstruction with Lagrange Interpolation</h3>
+                    <p class="text-center text-gray-600 mb-6">
+                        The secret is the constant term of the polynomial, which can be found by evaluating the Lagrange polynomial at \(x=0\). This avoids having to reconstruct the entire polynomial.
+                    </p>
+                    <div class="text-center bg-gray-50 p-4 rounded-md">
+                        $$ S = P(0) = \sum_{i=0}^{k-1} y_i \cdot \prod_{\substack{j=0 \\ j \neq i}}^{k-1} \frac{-x_j}{x_i - x_j} $$
+                    </div>
+                    <div class="mt-6 text-sm text-gray-700 space-y-2">
+                        <p><span class="font-bold">S</span>: The final, reconstructed secret.</p>
+                        <p><span class="font-bold">k</span>: The minimum number of shares needed (the threshold).</p>
+                        <p><span class="font-bold">\((x_i, y_i)\)</span>: The coordinates of the i-th share.</p>
+                        <p>The formula calculates a weighted sum of the y-values of the shares. Each weight (the product term) is specially constructed to isolate the contribution of its corresponding share, ultimately revealing the secret hidden at \(x=0\).</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof renderMathInElement === 'function') {
+                renderMathInElement(document.body);
+            }
+        });
+
+        const testCases = {
+            "1": {
+                "keys": { "n": 4, "k": 3 },
+                "1": { "base": "10", "value": "4" },
+                "2": { "base": "2", "value": "111" },
+                "3": { "base": "10", "value": "12" },
+                "6": { "base": "4", "value": "213" }
+            },
+            "2": {
+                "keys": { "n": 10, "k": 7 },
+                "1": { "base": "6", "value": "13444211440455345511" },
+                "2": { "base": "15", "value": "aed7015a346d63" },
+                "3": { "base": "15", "value": "6aeeb69631c227c" },
+                "4": { "base": "16", "value": "e1b5e05623d881f" },
+                "5": { "base": "8", "value": "316034514573652620673" },
+                "6": { "base": "3", "value": "2122212201122002221120200210011020220200" },
+                "7": { "base": "3", "value": "20120221122211000100210021102001201112121" },
+                "8": { "base": "6", "value": "20220554335330240002224253" },
+                "9": { "base": "12", "value": "45153788322a1255483" },
+                "10": { "base": "7", "value": "1101613130313526312514143" }
+            }
+        };
+
+        let currentChart = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const testCaseSelector = document.getElementById('testCaseSelector');
+            const runButton = document.getElementById('runButton');
+            const toggleMathButton = document.getElementById('toggleMathButton');
+            const mathDetails = document.getElementById('math-details');
+
+            function loadTestCase(caseId) {
+                const data = testCases[caseId];
+                const sharesTableBody = document.getElementById('sharesTableBody');
+                sharesTableBody.innerHTML = '';
+                for (const key in data) {
+                    if (key === 'keys') continue;
+                    const share = data[key];
+                    const row = `
+                        <tr class="bg-white border-b">
+                            <td class="px-6 py-4 font-medium text-gray-900">${key}</td>
+                            <td class="px-6 py-4">${share.base}</td>
+                            <td class="px-6 py-4 break-all">${share.value}</td>
+                        </tr>
+                    `;
+                    sharesTableBody.innerHTML += row;
+                }
+                document.getElementById('results-section').classList.add('hidden');
+                document.getElementById('process-output').innerHTML = '<p>Waiting to start simulation...</p>';
+                document.getElementById('progressBar').style.width = '0%';
+                document.getElementById('progressText').innerText = 'Progress: 0%';
+            }
+
+            testCaseSelector.addEventListener('change', (e) => {
+                loadTestCase(e.target.value);
+            });
+
+            runButton.addEventListener('click', () => {
+                const caseId = testCaseSelector.value;
+                runSimulation(testCases[caseId]);
+            });
+
+            toggleMathButton.addEventListener('click', () => {
+                const isHidden = mathDetails.classList.contains('hidden');
+                mathDetails.classList.toggle('hidden');
+                toggleMathButton.textContent = isHidden ? 'Hide the Math' : 'Show the Math Behind It';
+            });
+
+            loadTestCase('1');
+        });
+
+        function getDigitValue(char) {
+            const charCode = char.charCodeAt(0);
+            if (charCode >= 48 && charCode <= 57) {
+                return BigInt(charCode - 48);
+            } else if (charCode >= 97 && charCode <= 122) {
+                return BigInt(charCode - 87);
+            }
+            throw new Error(`Invalid character in number string: ${char}`);
+        }
+
+        function baseToBigInt(str, base) {
+            let result = 0n;
+            const bigBase = BigInt(base);
+            for (const char of str) {
+                result = result * bigBase + getDigitValue(char);
+            }
+            return result;
+        }
+
+        function decodeSharesFromJSON(data) {
+            const shares = [];
+            for (const key in data) {
+                if (key === 'keys') continue;
+                const x = BigInt(key);
+                const valueStr = data[key].value;
+                const base = parseInt(data[key].base, 10);
+                const y = baseToBigInt(valueStr, base);
+                shares.push({ x, y });
+            }
+            return shares;
+        }
+        
+        function recoverSecret(shares) {
+            let secret = 0n;
+            const xCoords = shares.map(s => s.x);
+
+            for (let i = 0; i < shares.length; i++) {
+                const xi = shares[i].x;
+                const yi = shares[i].y;
+                
+                let numerator = 1n;
+                let denominator = 1n;
+
+                for (let j = 0; j < xCoords.length; j++) {
+                    if (i === j) continue;
+                    const xj = xCoords[j];
+                    numerator *= -xj;
+                    denominator *= (xi - xj);
+                }
+                
+                if (denominator === 0n) return null;
+                const lagrangeBasis = numerator / denominator;
+                secret += yi * lagrangeBasis;
+            }
+            return secret;
+        }
+
+        function getCombinations(array, k) {
+            const result = [];
+            function combine(startIndex, currentCombination) {
+                if (currentCombination.length === k) {
+                    result.push([...currentCombination]);
+                    return;
+                }
+                if (startIndex >= array.length) {
+                    return;
+                }
+                for (let i = startIndex; i < array.length; i++) {
+                    currentCombination.push(array[i]);
+                    combine(i + 1, currentCombination);
+                    currentCombination.pop();
+                }
+            }
+            combine(0, []);
+            return result;
+        }
+
+        async function runSimulation(data) {
+            const runButton = document.getElementById('runButton');
+            runButton.disabled = true;
+            runButton.textContent = 'Running...';
+            runButton.classList.add('cursor-not-allowed', 'bg-gray-400');
+            runButton.classList.remove('bg-[#E57373]', 'hover:bg-red-500');
+
+            const processOutput = document.getElementById('process-output');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            processOutput.innerHTML = '';
+
+            const k = data.keys.k;
+            const shares = decodeSharesFromJSON(data);
+            const shareCombinations = getCombinations(shares, k);
+            const totalCombinations = shareCombinations.length;
+            const potentialSecrets = [];
+            const allShareIds = shares.map(s => s.x.toString());
+
+            for (let i = 0; i < totalCombinations; i++) {
+                const combo = shareCombinations[i];
+                const secret = recoverSecret(combo);
+                if (secret !== null) {
+                    potentialSecrets.push({secret: secret, combo: combo});
+                }
+
+                const comboIds = combo.map(s => s.x).join(', ');
+                processOutput.innerHTML += `> Testing combo [${comboIds}]: Secret = ${secret}\n`;
+                processOutput.scrollTop = processOutput.scrollHeight;
+
+                const progress = Math.round(((i + 1) / totalCombinations) * 100);
+                progressBar.style.width = `${progress}%`;
+                progressText.innerText = `Progress: ${progress}% (${i+1}/${totalCombinations})`;
+                
+                await new Promise(res => setTimeout(res, 20));
+            }
+
+            const secretCounts = new Map();
+            for (const item of potentialSecrets) {
+                const key = item.secret.toString();
+                secretCounts.set(key, (secretCounts.get(key) || 0) + 1);
+            }
+
+            let mostCommonSecretKey = '';
+            let maxCount = 0;
+            for (const [secretKey, count] of secretCounts.entries()) {
+                if (count > maxCount) {
+                    maxCount = count;
+                    mostCommonSecretKey = secretKey;
+                }
+            }
+
+            displayResults(secretCounts, mostCommonSecretKey);
+            
+            const successfulCombos = potentialSecrets.filter(p => p.secret.toString() === mostCommonSecretKey);
+            let correctShareIds = new Set();
+            successfulCombos.forEach(p => {
+                p.combo.forEach(share => correctShareIds.add(share.x.toString()));
+            });
+
+            const faultyShareIds = allShareIds.filter(id => !correctShareIds.has(id));
+            const faultyShareInfo = document.getElementById('faultyShareInfo');
+            if(faultyShareIds.length > 0) {
+                faultyShareInfo.textContent = `Faulty share(s) identified: ID(s) ${faultyShareIds.join(', ')}. These shares were not part of the consensus.`;
+            } else {
+                faultyShareInfo.textContent = `All shares appear to be correct and consistent.`;
+            }
+
+
+            runButton.disabled = false;
+            runButton.textContent = 'Run Simulation';
+            runButton.classList.remove('cursor-not-allowed', 'bg-gray-400');
+            runButton.classList.add('bg-[#E57373]', 'hover:bg-red-500');
+        }
+
+        function displayResults(secretCounts, finalSecretKey) {
+            const resultsSection = document.getElementById('results-section');
+            resultsSection.classList.remove('hidden');
+
+            document.getElementById('finalSecret').textContent = finalSecretKey;
+
+            const ctx = document.getElementById('resultsChart').getContext('2d');
+            const labels = Array.from(secretCounts.keys());
+            const data = Array.from(secretCounts.values());
+            
+            const backgroundColors = labels.map(label => label === finalSecretKey ? 'rgba(77, 182, 172, 0.8)' : 'rgba(229, 115, 115, 0.6)');
+            const borderColors = labels.map(label => label === finalSecretKey ? 'rgba(77, 182, 172, 1)' : 'rgba(229, 115, 115, 1)');
+
+            if (currentChart) {
+                currentChart.destroy();
+            }
+
+            currentChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels.map(l => l.length > 15 ? l.substring(0, 12) + '...' : l),
+                    datasets: [{
+                        label: 'Frequency of Calculated Secrets',
+                        data: data,
+                        backgroundColor: backgroundColors,
+                        borderColor: borderColors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Combinations'
+                            }
+                        },
+                        x: {
+                           title: {
+                                display: true,
+                                text: 'Potential Secret Value'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                title: function(tooltipItems) {
+                                    return 'Secret: ' + labels[tooltipItems[0].dataIndex];
+                                }
+                            }
+                        },
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
